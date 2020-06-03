@@ -3,7 +3,7 @@ import os, sys, getopt
 from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
   
-def listFolder(parent):
+def listFolder(parent, drive):
     output=[]
     subfolders = drive.ListFile({'q': "'%s' in parents and trashed=false" % parent}).GetList()
 
@@ -21,13 +21,17 @@ def downloadAndStore(input, root):
             os.chdir(root)
             
         destination = os.path.join(root, subfolder["title"])
-        os.mkdir(destination)
+
+        if not os.path.exists(destination):
+            os.mkdir(destination)
+            
         os.chdir(destination)
 
         print("\n Actually writing in %s" % destination)
         
         for f in subfolder["files"]:
-            f.GetContentFile(f["title"])
+            if not os.path.exists(os.path.join(destination, f["title"])):
+                f.GetContentFile(f["title"])
 
 def usage():
     print("Usage:")
@@ -62,7 +66,7 @@ def main(argv):
         if not os.path.exists(root_directory):
             os.makedirs(root_directory)
 
-        tree = listFolder(parent_id)
+        tree = listFolder(parent_id, drive)
         downloadAndStore(tree, root_directory)
 
 if __name__ == "__main__":
